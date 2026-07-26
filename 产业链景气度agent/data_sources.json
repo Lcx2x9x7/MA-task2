@@ -1,0 +1,532 @@
+{
+  "project": "新能源汽车产业链景气度 Evaluator",
+  "version": "current_mvp",
+  "last_updated": "2026-07-18",
+  "external_data_sources": [
+    {
+      "source_id": "sina_etf_realtime_quote",
+      "source_name": "新浪财经 ETF 最新行情接口",
+      "provider": "新浪财经",
+      "source_type": "HTTP行情接口",
+      "is_external": true,
+      "is_realtime_dynamic": true,
+      "dynamic_data_label": "实时动态数据源",
+      "update_frequency": "交易时段内动态更新；非交易日或盘后通常返回最近交易日最后行情",
+      "url_template": "https://hq.sinajs.cn/list={symbols}",
+      "request_method": "GET",
+      "symbols": [
+        {
+          "symbol": "sh515030",
+          "code": "515030",
+          "name": "华夏中证新能源汽车ETF",
+          "layer": "全链总锚",
+          "tracked_index": "中证新能源汽车指数"
+        },
+        {
+          "symbol": "sz159671",
+          "code": "159671",
+          "name": "工银中证稀有金属主题ETF",
+          "layer": "上游资源",
+          "tracked_index": "中证稀有金属主题指数"
+        },
+        {
+          "symbol": "sz159755",
+          "code": "159755",
+          "name": "广发国证新能源车电池ETF",
+          "layer": "中游电池",
+          "tracked_index": "国证新能源车电池指数"
+        },
+        {
+          "symbol": "sz159565",
+          "code": "159565",
+          "name": "中证汽车零部件ETF",
+          "layer": "下游零部件",
+          "tracked_index": "中证汽车零部件主题指数"
+        },
+        {
+          "symbol": "sh512480",
+          "code": "512480",
+          "name": "国联安中证全指半导体ETF",
+          "layer": "半导体全链总锚",
+          "tracked_index": "中证全指半导体产品与设备指数"
+        },
+        {
+          "symbol": "sz159516",
+          "code": "159516",
+          "name": "国泰中证半导体材料设备主题ETF",
+          "layer": "半导体上游设备材料",
+          "tracked_index": "中证半导体材料设备主题指数"
+        },
+        {
+          "symbol": "sz159995",
+          "code": "159995",
+          "name": "华夏国证半导体芯片ETF",
+          "layer": "半导体中游芯片",
+          "tracked_index": "国证半导体芯片指数"
+        },
+        {
+          "symbol": "sz159732",
+          "code": "159732",
+          "name": "华宝中证消费电子主题ETF",
+          "layer": "半导体下游电子应用",
+          "tracked_index": "中证消费电子主题指数"
+        }
+      ],
+      "fields_used": [
+        "symbol",
+        "code",
+        "name",
+        "latest",
+        "pct_change",
+        "open",
+        "prev_close",
+        "high",
+        "low",
+        "volume",
+        "amount",
+        "date",
+        "time"
+      ],
+      "used_by_metrics": [
+        "链路传导"
+      ],
+      "usage": "获取每只 ETF 最新价、涨跌幅、成交量、成交额和行情时间，用于最新价格、成交量确认和报告展示。",
+      "authentication": "不需要账户认证；当前通过公开 HTTP 接口访问。",
+      "code_location": "tools/sina_etf_trend_tool.py::_fetch_sina_quote",
+      "output_files": [
+        "outputs/crawled/sina_new_energy_etf_*/etf_latest_quotes.json",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_latest_quotes.json",
+        "outputs/crawled/sina_new_energy_etf_*/etf_latest_quotes.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_latest_quotes.csv",
+        "outputs/crawled/sina_new_energy_etf_*/raw_bundle.json",
+        "outputs/crawled/sina_semiconductor_etf_*/raw_bundle.json"
+      ],
+      "reliability_notes": [
+        "接口为公开行情接口，可能存在访问频率限制或返回格式变化。",
+        "非交易时间获取到的 date/time 可能是最近一个交易日的收盘后时间。",
+        "当前代码设置 3 次重试，失败后主流程终止。"
+      ]
+    },
+    {
+      "source_id": "sina_etf_daily_kline",
+      "source_name": "新浪财经 ETF 日 K 历史行情接口",
+      "provider": "新浪财经",
+      "source_type": "HTTP历史行情接口",
+      "is_external": true,
+      "is_realtime_dynamic": true,
+      "dynamic_data_label": "动态历史行情数据源",
+      "update_frequency": "交易日更新；每次运行实时请求最近约 120 个交易日数据",
+      "url_template": "https://quotes.sina.cn/cn/api/jsonp_v2.php/var%20data=/CN_MarketDataService.getKLineData?symbol={symbol}&scale=240&ma=no&datalen=120",
+      "request_method": "GET",
+      "symbols": [
+        "sh515030",
+        "sz159671",
+        "sz159755",
+        "sz159565",
+        "sh512480",
+        "sz159516",
+        "sz159995",
+        "sz159732"
+      ],
+      "fields_used": [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "used_by_metrics": [
+        "链路传导"
+      ],
+      "usage": "获取 ETF 日 K 序列，用于计算 ETF 趋势吸收信号、共同交易日日收益率、滞后相关和近 20 日同向率，统一服务于链路传导指标。",
+      "authentication": "不需要账户认证；当前通过公开 HTTP 接口访问。",
+      "code_location": "tools/sina_etf_trend_tool.py::_fetch_sina_kline",
+      "output_files": [
+        "outputs/crawled/sina_new_energy_etf_*/etf_histories_combined.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_histories_combined.csv",
+        "outputs/crawled/sina_new_energy_etf_*/etf_history_515030.csv",
+        "outputs/crawled/sina_new_energy_etf_*/etf_history_159671.csv",
+        "outputs/crawled/sina_new_energy_etf_*/etf_history_159755.csv",
+        "outputs/crawled/sina_new_energy_etf_*/etf_history_159565.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_history_512480.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_history_159516.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_history_159995.csv",
+        "outputs/crawled/sina_semiconductor_etf_*/etf_history_159732.csv",
+        "outputs/crawled/sina_new_energy_etf_*/raw_bundle.json",
+        "outputs/crawled/sina_semiconductor_etf_*/raw_bundle.json"
+      ],
+      "reliability_notes": [
+        "该接口返回 JSONP 文本，当前代码会解析其中的列表数据。",
+        "ETF 成立时间、停牌或接口异常可能导致共同交易日不足，从而影响链路传导计算。",
+        "当前代码设置 3 次重试，失败后主流程终止。"
+      ]
+    },
+    {
+      "source_id": "pre_crawled_new_energy_policy_texts",
+      "source_name": "新能源汽车产业链政策/新闻文本库",
+      "provider": "国家发展改革委、工业和信息化部、国家能源局等公开网站",
+      "source_type": "预爬取离线文本",
+      "is_external": true,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时外部数据源",
+      "update_frequency": "由离线爬虫不定期更新；当前运行时读取本地 txt 文件",
+      "local_path": "data/新能源汽车产业链/*.txt",
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "标题",
+        "来源",
+        "日期",
+        "URL",
+        "产业链",
+        "正文"
+      ],
+      "used_by_metrics": [
+        "政策环境"
+      ],
+      "usage": "读取新能源汽车产业链相关政策、通知、标准、经济运行新闻和政策解读文本，用于判断政策环境强度、权威来源数量、近期政策密度和监管约束信号。",
+      "authentication": "运行时不需要账户认证；文本已由离线爬虫提前保存到本地。",
+      "code_location": "tools/policy_text_tool.py::load_policy_texts; agents/policy_support_agent.py::PolicySupportAgent",
+      "output_files": [
+        "产业链报告中的政策环境明细",
+        "outputs/reports/new_energy_chain_etf_report_YYYYMMDD_HHMMSS.md",
+        "outputs/reports/new_energy_chain_etf_report_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "该数据源不是实时接口，反映的是本地文本库截至爬取时点的政策信息。",
+        "评分采用关键词和元数据规则，适合作为 MVP 的政策环境代理指标，不能替代正式政策效力审查。",
+        "如果文本库未及时更新，政策环境评分会滞后于最新政策变化。"
+      ]
+    },
+    {
+      "source_id": "pre_crawled_semiconductor_policy_texts",
+      "source_name": "半导体产业链政策/新闻文本库",
+      "provider": "国家发展改革委、工业和信息化部等公开网站",
+      "source_type": "预爬取离线文本",
+      "is_external": true,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时外部数据源",
+      "update_frequency": "由离线爬虫不定期更新；当前运行时读取本地 txt 文件",
+      "local_path": "data/半导体产业链/*.txt",
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "标题",
+        "来源",
+        "日期",
+        "URL",
+        "产业链",
+        "正文"
+      ],
+      "used_by_metrics": [
+        "政策环境"
+      ],
+      "usage": "读取半导体产业链相关政策、通知、税收优惠、集成电路企业清单、电子信息制造业运行和产业政策文本，用于判断政策环境强度、直接相关政策数量、近期政策密度和监管约束信号。",
+      "authentication": "运行时不需要账户认证；文本已由离线爬虫提前保存到本地。",
+      "code_location": "tools/policy_text_tool.py::load_policy_texts; agents/policy_support_agent.py::PolicySupportAgent.for_chain('semiconductor')",
+      "output_files": [
+        "产业链报告中的政策环境明细",
+        "outputs/reports/semiconductor_chain_etf_report_YYYYMMDD_HHMMSS.md",
+        "outputs/reports/semiconductor_chain_etf_report_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "该数据源不是实时接口，反映的是本地文本库截至爬取时点的政策信息。",
+        "评分采用关键词、来源和日期规则，适合作为 MVP 的政策环境代理指标，不能替代正式政策效力审查。",
+        "如果文本库混入泛科技或泛制造政策，政策环境评分可能偏高，因此代码优先使用半导体、芯片、集成电路、晶圆、封测、设备材料等直接相关关键词。"
+      ]
+    },
+    {
+      "source_id": "bank_settlement_fund_flow_excels",
+      "source_name": "产业链 UID 映射与结算链资金流 Excel",
+      "provider": "赛题提供的本地数据文件",
+      "source_type": "本地结构化 Excel",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时本地赛题数据源",
+      "update_frequency": "随赛题数据文件更新；当前运行时读取本地 xlsx 文件并生成缓存",
+      "local_path": [
+        "data/产业链.xlsx",
+        "data/结算链1.xlsx",
+        "data/结算链2.xlsx",
+        "data/企业财报.xlsx",
+        "data/指标体系结果.xlsx"
+      ],
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "产业链名称",
+        "节点上中下属性",
+        "客户UID",
+        "交易对手客户UID",
+        "交易方向名称",
+        "现金交易笔数",
+        "现金+票据交易笔数",
+        "现金+票据交易金额区间",
+        "链上企业总数（含财报）",
+        "客户UID"
+      ],
+      "used_by_metrics": [
+        "链路传导",
+        "企业资金活跃",
+        "链条丰度"
+      ],
+      "usage": "产业链层面按客户UID匹配结算链1和结算链2，计算上游/中游/下游交易经营活跃度、大额交易活跃度、交易对手数、交易集中度，并作为链路传导中的链上资金传导子项；企业层面保留资金活跃度指标，计算交易对手集中度、上下游链接广度、链上交易金额代理占比和大额交易活跃度；链条丰度读取指标体系结果表中的链上企业总数、ETF增长代理、区域集聚度和近三年国家级政策数。",
+      "authentication": "不需要账户认证；全部来自本地赛题数据文件。",
+      "code_location": "tools/fund_flow_tool.py::calculate_chain_fund_flow; tools/fund_flow_tool.py::calculate_enterprise_fund_flow; tools/industry_abundance_tool.py::calculate_industry_abundance",
+      "output_files": [
+        "outputs/cache/fund_flow/*.json",
+        "产业链报告中的链上资金传导明细",
+        "企业分层报告中的资金活跃明细",
+        "产业链报告中的链条丰度明细"
+      ],
+      "reliability_notes": [
+        "结算链只有交易金额区间，没有精确金额；当前用金额区间中位数乘以交易笔数作为金额代理，用于集中度和占比计算。",
+        "交易经营活跃度按用户要求使用现金交易笔数 + 现金+票据交易笔数，可能对现金交易存在一定重复计数，但保持规则可解释和可复现。",
+        "首次计算某条产业链需要扫描较大的结算链 Excel，耗时较长；结果会缓存到 outputs/cache/fund_flow。"
+      ]
+    },
+    {
+      "source_id": "value_distribution_csvs",
+      "source_name": "产业链价值分配财务指标表",
+      "provider": "赛题提供的本地数据文件",
+      "source_type": "本地结构化 CSV",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时本地赛题数据源",
+      "update_frequency": "随赛题数据文件更新；当前运行时读取本地 csv 文件",
+      "local_path": [
+        "data/价值分配/layer_margin.csv",
+        "data/价值分配/company_margin.csv"
+      ],
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "产业链",
+        "上中下游",
+        "层级",
+        "节点",
+        "股票代码",
+        "公司名称",
+        "报告期",
+        "毛利率%",
+        "净利率%",
+        "ROE_%",
+        "ROE加权%"
+      ],
+      "used_by_metrics": [
+        "价值分配"
+      ],
+      "usage": "按产业链匹配上市公司或代理公司利润率数据，计算整体盈利能力、上中下游分配均衡度、健康环节覆盖度和利润趋势，用于判断产业链价值是否合理沉淀在链上、是否存在单一环节利润挤压。",
+      "authentication": "不需要账户认证；来自本地赛题数据文件。",
+      "code_location": "tools/value_distribution_tool.py::calculate_value_distribution",
+      "output_files": [
+        "产业链报告中的价值分配明细",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.md",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "当前数据以上市公司或代理公司财务指标为主，不能完全代表全量链上企业利润。",
+        "部分节点存在代理映射，最终用于客户经理落地时仍需核验企业真实财务报表、订单和成本结构。",
+        "价值分配评分关注利润健康与上中下游均衡，不等同于对单个上市公司的投资判断。"
+      ]
+    },
+    {
+      "source_id": "supply_demand_csvs",
+      "source_name": "产业链供需匹配指标表",
+      "provider": "赛题提供的本地数据文件",
+      "source_type": "本地结构化 CSV",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时本地赛题数据源",
+      "update_frequency": "随赛题数据文件更新；当前运行时读取本地 csv 文件",
+      "local_path": [
+        "data/供需匹配/production_sales.csv",
+        "data/供需匹配/capacity_util.csv",
+        "data/供需匹配/pmi_detail.csv",
+        "data/供需匹配/price_scissors.csv",
+        "data/价值分配/industry_profit.csv"
+      ],
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "产业链",
+        "产业链标签",
+        "年份",
+        "月份",
+        "销量_万辆",
+        "工业增加值YoY_%",
+        "产能利用率_%",
+        "PMI分项",
+        "指数值",
+        "上游原料YoY",
+        "出厂PPIYOY",
+        "价格剪刀差"
+      ],
+      "used_by_metrics": [
+        "供需匹配"
+      ],
+      "usage": "综合产销增长或工业增加值同比、产能利用率、制造业PMI和价格剪刀差，评估需求增长、供给强度、宏观制造景气和价格传导是否协调。",
+      "authentication": "不需要账户认证；来自本地赛题数据文件。",
+      "code_location": "tools/supply_demand_tool.py::calculate_supply_demand_match",
+      "output_files": [
+        "产业链报告中的供需匹配明细",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.md",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "PMI 当前只有制造业总指数，不是产业链专属新订单指数，因此作为宏观需求环境代理。",
+        "新能源汽车产业链可使用产销序列；其他产业链产销数据缺失时使用相关行业工业增加值同比作为需求增长代理。",
+        "价格剪刀差用于识别成本压力和价格传导不畅，不能替代具体产品价格、库存和订单数据。"
+      ]
+    },
+    {
+      "source_id": "chokepoint_rating_table",
+      "source_name": "卡脖子评级表",
+      "provider": "赛题提供的本地数据文件",
+      "source_type": "本地结构化 CSV",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时本地赛题数据源",
+      "update_frequency": "随赛题数据文件更新；当前运行时读取本地 csv 文件",
+      "local_path": "data/卡脖子/卡脖子评级表.csv",
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "节点名称",
+        "产业链",
+        "层级",
+        "A_进口依存度(0-4)",
+        "B_技术成熟度反向(0-4)",
+        "C_断供风险(0-4)",
+        "D_突破难度(0-4)",
+        "总分(0-16)",
+        "卡脖子等级",
+        "等级说明",
+        "判断依据"
+      ],
+      "used_by_metrics": [
+        "断链风险"
+      ],
+      "usage": "按产业链名称匹配卡脖子节点，统计命中节点数量、S/A级高风险节点数量和高风险占比，并抽取总分最高节点及判断依据，用于断链风险中的地缘政治与卡脖子风险评估。",
+      "authentication": "不需要账户认证；来自本地赛题数据文件。",
+      "code_location": "tools/chain_break_risk_tool.py::calculate_chain_break_risk",
+      "output_files": [
+        "产业链报告中的断链风险明细",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.md",
+        "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "断链风险为风险向指标，分数越高代表风险越高；综合景气分中使用 100-断链风险分作为安全折算分参与加权。",
+        "政策与监管风险来自政策环境模块中的约束/监管信号，市场与价格风险使用 ETF 近20日下行、波动率和指标体系结果表中的 PPI 价格代理。",
+        "当前未接入核心原材料现货价格接口和产能利用率接口，因此原材料价格波动率、产能利用率和产品价格下行趋势采用可获得数据的代理变量，报告中会保留该限制说明。"
+      ]
+    },
+    {
+      "source_id": "enterprise_financial_statement_xlsx",
+      "source_name": "企业财报表",
+      "provider": "赛题提供的本地数据文件",
+      "source_type": "本地结构化 Excel",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时本地赛题数据源",
+      "update_frequency": "随赛题数据文件更新；当前运行时按客户UID读取企业财报.xlsx",
+      "local_path": "data/企业财报.xlsx",
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "客户UID",
+        "注册资本",
+        "企业规模国标",
+        "员工人数",
+        "经营状态",
+        "注册地址_省",
+        "注册地址_市",
+        "注册地址_区县",
+        "国标行业1级",
+        "国标行业2级",
+        "年报日期",
+        "资产负债率",
+        "资产合计",
+        "负债合计",
+        "流动资产合计",
+        "流动负债合计",
+        "所有者权益合计",
+        "营业收入",
+        "营业利润",
+        "净利润",
+        "销售毛利率",
+        "现金收入比率",
+        "经营活动产生的现金流量净额",
+        "期末现金及现金等价物余额"
+      ],
+      "used_by_metrics": [
+        "财务质量"
+      ],
+      "usage": "按客户UID匹配企业财报字段，计算规模实力、盈利能力、偿债压力、现金流质量和经营状态，用于企业层面的财务质量评分。",
+      "authentication": "不需要账户认证；来自本地赛题数据文件。",
+      "code_location": "tools/enterprise_financial_tool.py::calculate_enterprise_financial_quality",
+      "output_files": [
+        "企业分层报告中的财务质量明细",
+        "outputs/enterprise_reports/enterprise_position_UID_YYYYMMDD_HHMMSS.md",
+        "outputs/enterprise_reports/enterprise_position_UID_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "财务质量仅使用赛题本地财报字段，不代表审计结论或信用评级。",
+        "部分企业财务字段可能为空，缺失项按中性分处理并在报告中说明。",
+        "财报数据与结算链数据可能存在时间口径差异，落地授信前需要补充最新报表、征信、订单和回款核验。"
+      ]
+    },
+    {
+      "source_id": "latest_chain_evaluation_reports",
+      "source_name": "最近产业链评估结果",
+      "provider": "本项目生成的产业链评估报告",
+      "source_type": "本地结构化 JSON 报告",
+      "is_external": false,
+      "is_realtime_dynamic": false,
+      "dynamic_data_label": "非实时派生数据源",
+      "update_frequency": "每次运行产业链评估时生成；企业评估时优先读取同产业链最近一份报告",
+      "local_path": [
+        "outputs/reports/*_chain_etf_report_*.json",
+        "data/指标体系结果.xlsx"
+      ],
+      "request_method": "LOCAL_FILE_READ",
+      "fields_used": [
+        "chain_name",
+        "score",
+        "level",
+        "components",
+        "链上企业总数（含财报）",
+        "ETF近3月涨跌%",
+        "最高省集聚比例",
+        "近3年国家级政策数"
+      ],
+      "used_by_metrics": [
+        "链条环境"
+      ],
+      "usage": "企业层面读取所属产业链最近一次综合评估结果，作为企业外部景气、政策、供需、价值、断链等环境因素的修正项；如果没有历史报告，则使用指标体系结果表做弱代理。",
+      "authentication": "不需要账户认证；来自本项目生成报告和本地赛题数据文件。",
+      "code_location": "tools/chain_environment_tool.py::calculate_chain_environment",
+      "output_files": [
+        "企业分层报告中的链条环境明细",
+        "outputs/enterprise_reports/enterprise_position_UID_YYYYMMDD_HHMMSS.md",
+        "outputs/enterprise_reports/enterprise_position_UID_YYYYMMDD_HHMMSS.json"
+      ],
+      "reliability_notes": [
+        "链条环境继承最近产业链报告的生成时间和数据口径；如果产业链报告过旧，需要先重新运行产业链评估。",
+        "该指标用于修正企业外部环境，不代表企业自身经营能力。",
+        "找不到历史产业链报告时使用指标体系结果表弱代理，解释力度低于完整产业链评估。"
+      ]
+    }
+  ],
+  "not_currently_used_sources": [
+    {
+      "source_name": "国家统计局实时API",
+      "status": "未接入",
+      "reason": "当前 MVP 只使用 ETF 行情数据；国家统计局数据可作为后续宏观和行业基本面扩展。"
+    },
+    {
+      "source_name": "上海有色网价格接口",
+      "status": "未接入",
+      "reason": "当前 MVP 未接入金属现货价格；后续可用于增强上游资源价格景气判断。"
+    }
+  ],
+  "generated_outputs": {
+    "crawl_output_dir_pattern": "outputs/crawled/sina_{new_energy|semiconductor}_etf_YYYYMMDD_HHMMSS/",
+    "report_output_pattern": "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.md",
+    "json_report_output_pattern": "outputs/reports/{new_energy|semiconductor}_chain_etf_report_YYYYMMDD_HHMMSS.json"
+  }
+}
